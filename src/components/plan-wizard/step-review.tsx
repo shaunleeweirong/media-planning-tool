@@ -41,6 +41,19 @@ function formatNumber(num: number): string {
   return num.toLocaleString()
 }
 
+const INPUT_LABELS: Record<string, { label: string; format: (v: number) => string }> = {
+  cpm: { label: 'CPM', format: (v) => `$${v}` },
+  cpc: { label: 'CPC', format: (v) => `$${v}` },
+  cpv: { label: 'CPV', format: (v) => `$${v}` },
+  cpe: { label: 'CPE', format: (v) => `$${v}` },
+  ctr: { label: 'CTR', format: (v) => `${v}%` },
+  vtr: { label: 'VTR', format: (v) => `${v}%` },
+  frequency: { label: 'Frequency', format: (v) => `${v}` },
+  conversion_rate: { label: 'Conv. Rate', format: (v) => `${v}%` },
+  form_completion_rate: { label: 'Form Rate', format: (v) => `${v}%` },
+  engagement_rate: { label: 'Eng. Rate', format: (v) => `${v}%` },
+}
+
 function getChannelLabel(channel: ChannelResult): string {
   let label = CHANNEL_LABELS[channel.channel_type] || channel.channel_type
   if (channel.platform) {
@@ -50,41 +63,6 @@ function getChannelLabel(channel: ChannelResult): string {
     label += ` (${OBJECTIVE_LABELS[channel.objective] || channel.objective})`
   }
   return label
-}
-
-function getRelevantMetrics(channel: ChannelResult): { label: string; key: string }[] {
-  const base = [{ label: 'Impressions', key: 'impressions' }]
-
-  if (channel.channel_type === 'search' ||
-      channel.objective === 'website_visits' ||
-      channel.objective === 'website_conversions' ||
-      channel.objective === 'lead_generation') {
-    base.push({ label: 'Clicks', key: 'clicks' })
-  }
-
-  if (channel.channel_type === 'display' ||
-      channel.channel_type === 'programmatic' ||
-      channel.objective === 'awareness') {
-    base.push({ label: 'Reach', key: 'reach' })
-  }
-
-  if (channel.channel_type === 'video' || channel.objective === 'video_views') {
-    return [{ label: 'Views', key: 'views' }]
-  }
-
-  if (channel.objective === 'engagements') {
-    return [{ label: 'Engagements', key: 'engagements' }]
-  }
-
-  if (channel.objective === 'website_conversions') {
-    base.push({ label: 'Conversions', key: 'conversions' })
-  }
-
-  if (channel.objective === 'lead_generation') {
-    base.push({ label: 'Leads', key: 'leads' })
-  }
-
-  return base
 }
 
 export function StepReview({ formData }: StepReviewProps) {
@@ -135,7 +113,10 @@ export function StepReview({ formData }: StepReviewProps) {
                   Budget: ${channel.budget.toLocaleString()} |{' '}
                   {Object.entries(channel.inputs)
                     .filter(([, v]) => v > 0)
-                    .map(([k, v]) => `${k.toUpperCase()}: ${v}`)
+                    .map(([k, v]) => {
+                      const config = INPUT_LABELS[k]
+                      return config ? `${config.label}: ${config.format(v)}` : `${k}: ${v}`
+                    })
                     .join(' | ')}
                 </p>
               </div>
@@ -158,28 +139,50 @@ export function StepReview({ formData }: StepReviewProps) {
             </TabsList>
             {(['aggressive', 'moderate', 'conservative'] as const).map((scenario) => (
               <TabsContent key={scenario} value={scenario}>
-                <div className="border rounded-lg mt-4">
+                <div className="border rounded-lg mt-4 overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="border-b bg-muted/50">
                       <tr>
                         <th className="text-left p-3">Channel</th>
                         <th className="text-right p-3">Budget</th>
-                        <th className="text-right p-3">Key Metrics</th>
+                        <th className="text-right p-3">Impressions</th>
+                        <th className="text-right p-3">Clicks</th>
+                        <th className="text-right p-3">Reach</th>
+                        <th className="text-right p-3">Views</th>
+                        <th className="text-right p-3">Result</th>
+                        <th className="text-right p-3">Cost/Result</th>
                       </tr>
                     </thead>
                     <tbody>
                       {results.map((channel, i) => {
-                        const metrics = getRelevantMetrics(channel)
+                        const m = channel.metrics[scenario]
+
+                        let result = '-'
+                        if (m.conversions > 0) result = `${formatNumber(m.conversions)} conv`
+                        else if (m.leads > 0) result = `${formatNumber(m.leads)} leads`
+                        else if (m.engagements > 0) result = `${formatNumber(m.engagements)} eng`
+
                         return (
                           <tr key={i} className="border-b last:border-0">
                             <td className="p-3">{getChannelLabel(channel)}</td>
                             <td className="text-right p-3">${channel.budget.toLocaleString()}</td>
+                            <td className="text-right p-3">{m.impressions > 0 ? formatNumber(m.impressions) : '-'}</td>
+                            <td className="text-right p-3">{m.clicks > 0 ? formatNumber(m.clicks) : '-'}</td>
+                            <td className="text-right p-3">{m.reach > 0 ? formatNumber(m.reach) : '-'}</td>
+                            <td className="text-right p-3">{m.views > 0 ? formatNumber(m.views) : '-'}</td>
+                            <td className="text-right p-3">{result}</td>
                             <td className="text-right p-3">
-                              {metrics.map((m) => (
-                                <span key={m.key} className="ml-4">
-                                  {m.label}: {formatNumber((channel.metrics[scenario] as any)[m.key])}
-                                </span>
-                              ))}
+                              {(() => {
+                                let resultCount = 0
+                                if (m.conversions > 0) resultCount = m.conversions
+                                else if (m.leads > 0) resultCount = m.leads
+                                else if (m.engagements > 0) resultCount = m.engagements
+
+                                if (resultCount > 0) {
+                                  return `$${(channel.budget / resultCount).toFixed(2)}`
+                                }
+                                return '-'
+                              })()}
                             </td>
                           </tr>
                         )

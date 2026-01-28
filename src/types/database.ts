@@ -36,9 +36,11 @@ export type ChannelInputs = {
   cpv?: number
   cpe?: number
   ctr?: number
+  vtr?: number
   frequency?: number
   conversion_rate?: number
   form_completion_rate?: number
+  engagement_rate?: number
 }
 
 export type PlanChannel = {

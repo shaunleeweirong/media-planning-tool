@@ -149,6 +149,7 @@ export default async function PlanViewPage({ params }: { params: Promise<{ id: s
                         <th className="text-right p-3">Reach</th>
                         <th className="text-right p-3">Views</th>
                         <th className="text-right p-3">Result</th>
+                        <th className="text-right p-3">Cost/Result</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -162,10 +163,60 @@ export default async function PlanViewPage({ params }: { params: Promise<{ id: s
                           channelLabel += ` (${OBJECTIVE_LABELS[channel.objective]})`
                         }
 
+                        // Determine result based on objective
                         let result = '-'
-                        if (m.conversions > 0) result = `${formatNumber(m.conversions)} conv`
-                        else if (m.leads > 0) result = `${formatNumber(m.leads)} leads`
-                        else if (m.engagements > 0) result = `${formatNumber(m.engagements)} eng`
+                        let resultCount = 0
+
+                        switch (channel.objective) {
+                          case 'video_views':
+                            if (m.views > 0) {
+                              result = `${formatNumber(m.views)} views`
+                              resultCount = m.views
+                            }
+                            break
+                          case 'website_visits':
+                            if (m.clicks > 0) {
+                              result = `${formatNumber(m.clicks)} clicks`
+                              resultCount = m.clicks
+                            }
+                            break
+                          case 'engagements':
+                            if (m.engagements > 0) {
+                              result = `${formatNumber(m.engagements)} eng`
+                              resultCount = m.engagements
+                            }
+                            break
+                          case 'website_conversions':
+                            if (m.conversions > 0) {
+                              result = `${formatNumber(m.conversions)} conv`
+                              resultCount = m.conversions
+                            }
+                            break
+                          case 'lead_generation':
+                            if (m.leads > 0) {
+                              result = `${formatNumber(m.leads)} leads`
+                              resultCount = m.leads
+                            }
+                            break
+                          case 'awareness':
+                            if (m.reach > 0) {
+                              result = `${formatNumber(m.reach)} reach`
+                              resultCount = m.reach
+                            }
+                            break
+                          default:
+                            // For non-social channels, infer from channel type
+                            if (channel.channel_type === 'video' && m.views > 0) {
+                              result = `${formatNumber(m.views)} views`
+                              resultCount = m.views
+                            } else if (channel.channel_type === 'search' && m.clicks > 0) {
+                              result = `${formatNumber(m.clicks)} clicks`
+                              resultCount = m.clicks
+                            } else if ((channel.channel_type === 'display' || channel.channel_type === 'programmatic') && m.reach > 0) {
+                              result = `${formatNumber(m.reach)} reach`
+                              resultCount = m.reach
+                            }
+                        }
 
                         return (
                           <tr key={i} className="border-b last:border-0">
@@ -176,6 +227,9 @@ export default async function PlanViewPage({ params }: { params: Promise<{ id: s
                             <td className="text-right p-3">{m.reach > 0 ? formatNumber(m.reach) : '-'}</td>
                             <td className="text-right p-3">{m.views > 0 ? formatNumber(m.views) : '-'}</td>
                             <td className="text-right p-3">{result}</td>
+                            <td className="text-right p-3">
+                              {resultCount > 0 ? `$${(channel.budget / resultCount).toFixed(2)}` : '-'}
+                            </td>
                           </tr>
                         )
                       })}

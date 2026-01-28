@@ -92,7 +92,7 @@ export async function GET(
   summarySheet.getCell(`A${row}`).font = { bold: true }
   row++
 
-  summarySheet.getRow(row).values = ['Channel', 'Objective', 'Budget', 'CPM', 'CPC', 'CPV', 'CTR', 'Frequency', 'Conv Rate', 'Form Rate']
+  summarySheet.getRow(row).values = ['Channel', 'Objective', 'Budget', 'CPM', 'CPC', 'CPV', 'CTR', 'VTR', 'Frequency', 'Conv Rate', 'Form Rate', 'Eng Rate']
   summarySheet.getRow(row).font = { bold: true }
   summarySheet.getRow(row).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } }
   row++
@@ -109,9 +109,11 @@ export async function GET(
       ch.inputs.cpc || '-',
       ch.inputs.cpv || '-',
       ch.inputs.ctr ? `${ch.inputs.ctr}%` : '-',
+      ch.inputs.vtr ? `${ch.inputs.vtr}%` : '-',
       ch.inputs.frequency || '-',
       ch.inputs.conversion_rate ? `${ch.inputs.conversion_rate}%` : '-',
       ch.inputs.form_completion_rate ? `${ch.inputs.form_completion_rate}%` : '-',
+      ch.inputs.engagement_rate ? `${ch.inputs.engagement_rate}%` : '-',
     ]
     row++
   })
@@ -129,7 +131,7 @@ export async function GET(
     summarySheet.getCell(`A${row}`).font = { bold: true }
     row++
 
-    summarySheet.getRow(row).values = ['Channel', 'Objective', 'Budget', 'Impressions', 'Clicks', 'Reach', 'Views', 'Result']
+    summarySheet.getRow(row).values = ['Channel', 'Objective', 'Budget', 'Impressions', 'Clicks', 'Reach', 'Views', 'Result', 'Cost/Result']
     summarySheet.getRow(row).font = { bold: true }
     summarySheet.getRow(row).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } }
     row++
@@ -140,9 +142,61 @@ export async function GET(
 
       const m = ch.metrics[scenario.key]
       let result = '-'
-      if (m.conversions > 0) result = `${m.conversions} conversions`
-      else if (m.leads > 0) result = `${m.leads} leads`
-      else if (m.engagements > 0) result = `${m.engagements} engagements`
+      let resultCount = 0
+
+      // Determine result based on objective
+      switch (ch.objective) {
+        case 'video_views':
+          if (m.views > 0) {
+            result = `${m.views} views`
+            resultCount = m.views
+          }
+          break
+        case 'website_visits':
+          if (m.clicks > 0) {
+            result = `${m.clicks} clicks`
+            resultCount = m.clicks
+          }
+          break
+        case 'engagements':
+          if (m.engagements > 0) {
+            result = `${m.engagements} engagements`
+            resultCount = m.engagements
+          }
+          break
+        case 'website_conversions':
+          if (m.conversions > 0) {
+            result = `${m.conversions} conversions`
+            resultCount = m.conversions
+          }
+          break
+        case 'lead_generation':
+          if (m.leads > 0) {
+            result = `${m.leads} leads`
+            resultCount = m.leads
+          }
+          break
+        case 'awareness':
+          if (m.reach > 0) {
+            result = `${m.reach} reach`
+            resultCount = m.reach
+          }
+          break
+        default:
+          // For non-social channels, infer from channel type
+          if (ch.channel_type === 'video' && m.views > 0) {
+            result = `${m.views} views`
+            resultCount = m.views
+          } else if (ch.channel_type === 'search' && m.clicks > 0) {
+            result = `${m.clicks} clicks`
+            resultCount = m.clicks
+          } else if ((ch.channel_type === 'display' || ch.channel_type === 'programmatic') && m.reach > 0) {
+            result = `${m.reach} reach`
+            resultCount = m.reach
+          }
+      }
+
+      const costPerResult = resultCount > 0 ? `$${(ch.budget / resultCount).toFixed(2)}` : '-'
 
       summarySheet.getRow(row).values = [
         channelLabel,
@@ -153,6 +207,7 @@ export async function GET(
         m.reach || '-',
         m.views || '-',
         result,
+        costPerResult,
       ]
       row++
     })
@@ -198,7 +253,7 @@ export async function GET(
     detailSheet.getCell(`A${row}`).font = { bold: true }
     row++
 
-    detailSheet.getRow(row).values = ['Channel', 'Period', 'Budget', 'Impressions', 'Clicks', 'Reach', 'Views', 'Result']
+    detailSheet.getRow(row).values = ['Channel', 'Period', 'Budget', 'Impressions', 'Clicks', 'Reach', 'Views', 'Result', 'Cost/Result']
     detailSheet.getRow(row).font = { bold: true }
     detailSheet.getRow(row).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } }
     row++
@@ -210,9 +265,19 @@ export async function GET(
 
         const m = ch.metrics[scenario.key]
         let result = '-'
-        if (m.conversions > 0) result = `${m.conversions} conv`
-        else if (m.leads > 0) result = `${m.leads} leads`
-        else if (m.engagements > 0) result = `${m.engagements} eng`
+        let resultCount = 0
+        if (m.conversions > 0) {
+          result = `${m.conversions} conv`
+          resultCount = m.conversions
+        } else if (m.leads > 0) {
+          result = `${m.leads} leads`
+          resultCount = m.leads
+        } else if (m.engagements > 0) {
+          result = `${m.engagements} eng`
+          resultCount = m.engagements
+        }
+
+        const costPerResult = resultCount > 0 ? `$${(ch.budget / resultCount).toFixed(2)}` : '-'
 
         detailSheet.getRow(row).values = [
           channelLabel,
@@ -223,6 +288,7 @@ export async function GET(
           m.reach || '-',
           m.views || '-',
           result,
+          costPerResult,
         ]
         row++
       })
@@ -240,9 +306,19 @@ export async function GET(
 
       const m = ch.metrics[scenario.key]
       let result = '-'
-      if (m.conversions > 0) result = `${m.conversions} conv`
-      else if (m.leads > 0) result = `${m.leads} leads`
-      else if (m.engagements > 0) result = `${m.engagements} eng`
+      let resultCount = 0
+      if (m.conversions > 0) {
+        result = `${m.conversions} conv`
+        resultCount = m.conversions
+      } else if (m.leads > 0) {
+        result = `${m.leads} leads`
+        resultCount = m.leads
+      } else if (m.engagements > 0) {
+        result = `${m.engagements} eng`
+        resultCount = m.engagements
+      }
+
+      const costPerResult = resultCount > 0 ? `$${(ch.budget / resultCount).toFixed(2)}` : '-'
 
       detailSheet.getRow(row).values = [
         channelLabel,
@@ -253,6 +329,7 @@ export async function GET(
         m.reach || '-',
         m.views || '-',
         result,
+        costPerResult,
       ]
       detailSheet.getRow(row).font = { bold: true }
       row++

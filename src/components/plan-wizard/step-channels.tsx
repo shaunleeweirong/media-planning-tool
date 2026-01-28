@@ -68,6 +68,7 @@ export function StepChannels({ formData, updateFormData }: StepChannelsProps) {
       return [
         { key: 'cpc', label: 'CPC ($)' },
         { key: 'ctr', label: 'CTR (%)' },
+        { key: 'frequency', label: 'Frequency (Optional)' },
       ]
     }
     if (channel.channel_type === 'display' || channel.channel_type === 'programmatic') {
@@ -78,7 +79,11 @@ export function StepChannels({ formData, updateFormData }: StepChannelsProps) {
       ]
     }
     if (channel.channel_type === 'video') {
-      return [{ key: 'cpv', label: 'CPV ($)' }]
+      return [
+        { key: 'cpv', label: 'CPV ($)' },
+        { key: 'vtr', label: 'VTR (%) (Optional)' },
+        { key: 'frequency', label: 'Frequency (Optional)' },
+      ]
     }
     if (channel.channel_type === 'social') {
       switch (channel.objective) {
@@ -88,25 +93,36 @@ export function StepChannels({ formData, updateFormData }: StepChannelsProps) {
             { key: 'frequency', label: 'Frequency' },
           ]
         case 'video_views':
-          return [{ key: 'cpv', label: 'CPV ($)' }]
+          return [
+            { key: 'cpv', label: 'CPV ($)' },
+            { key: 'vtr', label: 'VTR (%) (Optional)' },
+            { key: 'frequency', label: 'Frequency (Optional)' },
+          ]
         case 'website_visits':
           return [
             { key: 'cpc', label: 'CPC ($)' },
             { key: 'ctr', label: 'CTR (%)' },
+            { key: 'frequency', label: 'Frequency (Optional)' },
           ]
         case 'engagements':
-          return [{ key: 'cpe', label: 'CPE ($)' }]
+          return [
+            { key: 'cpe', label: 'CPE ($)' },
+            { key: 'engagement_rate', label: 'Engagement Rate (%) (Optional)' },
+            { key: 'frequency', label: 'Frequency (Optional)' },
+          ]
         case 'website_conversions':
           return [
             { key: 'cpc', label: 'CPC ($)' },
             { key: 'ctr', label: 'CTR (%)' },
             { key: 'conversion_rate', label: 'Conversion Rate (%)' },
+            { key: 'frequency', label: 'Frequency (Optional)' },
           ]
         case 'lead_generation':
           return [
             { key: 'cpc', label: 'CPC ($)' },
             { key: 'ctr', label: 'CTR (%)' },
             { key: 'form_completion_rate', label: 'Form Completion Rate (%)' },
+            { key: 'frequency', label: 'Frequency (Optional)' },
           ]
         default:
           return []

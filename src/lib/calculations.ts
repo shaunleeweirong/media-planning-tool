@@ -60,6 +60,9 @@ function calculateBaseMetrics(
       metrics.clicks = budget / cpc
       if (ctr > 0) {
         metrics.impressions = metrics.clicks / ctr
+        if (inputs.frequency) {
+          metrics.reach = metrics.impressions / inputs.frequency
+        }
       }
     }
   }
@@ -79,6 +82,12 @@ function calculateBaseMetrics(
     const cpv = inputs.cpv || 0
     if (cpv > 0) {
       metrics.views = budget / cpv
+      if (inputs.vtr) {
+        metrics.impressions = metrics.views / (inputs.vtr / 100)
+        if (inputs.frequency) {
+          metrics.reach = metrics.impressions / inputs.frequency
+        }
+      }
     }
   }
 
@@ -97,6 +106,12 @@ function calculateBaseMetrics(
         const cpv = inputs.cpv || 0
         if (cpv > 0) {
           metrics.views = budget / cpv
+          if (inputs.vtr) {
+            metrics.impressions = metrics.views / (inputs.vtr / 100)
+            if (inputs.frequency) {
+              metrics.reach = metrics.impressions / inputs.frequency
+            }
+          }
         }
         break
       }
@@ -107,6 +122,9 @@ function calculateBaseMetrics(
           metrics.clicks = budget / cpc
           if (ctr > 0) {
             metrics.impressions = metrics.clicks / ctr
+            if (inputs.frequency) {
+              metrics.reach = metrics.impressions / inputs.frequency
+            }
           }
         }
         break
@@ -115,6 +133,12 @@ function calculateBaseMetrics(
         const cpe = inputs.cpe || 0
         if (cpe > 0) {
           metrics.engagements = budget / cpe
+          if (inputs.engagement_rate) {
+            metrics.impressions = metrics.engagements / (inputs.engagement_rate / 100)
+            if (inputs.frequency) {
+              metrics.reach = metrics.impressions / inputs.frequency
+            }
+          }
         }
         break
       }
@@ -126,6 +150,9 @@ function calculateBaseMetrics(
           metrics.clicks = budget / cpc
           if (ctr > 0) {
             metrics.impressions = metrics.clicks / ctr
+            if (inputs.frequency) {
+              metrics.reach = metrics.impressions / inputs.frequency
+            }
           }
           metrics.conversions = metrics.clicks * convRate
         }
@@ -139,6 +166,9 @@ function calculateBaseMetrics(
           metrics.clicks = budget / cpc
           if (ctr > 0) {
             metrics.impressions = metrics.clicks / ctr
+            if (inputs.frequency) {
+              metrics.reach = metrics.impressions / inputs.frequency
+            }
           }
           metrics.leads = metrics.clicks * formRate
         }
