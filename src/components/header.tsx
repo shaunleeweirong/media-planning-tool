@@ -24,7 +24,7 @@ export function Header({ profile }: HeaderProps) {
 
   return (
     <header className="border-b">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container mx-auto px-4 flex h-16 items-center justify-between">
         <Link href="/dashboard" className="font-bold text-xl">
           Media Plan Generator
         </Link>

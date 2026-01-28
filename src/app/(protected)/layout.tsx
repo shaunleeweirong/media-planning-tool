@@ -23,7 +23,7 @@ export default async function ProtectedLayout({
   return (
     <div className="min-h-screen flex flex-col">
       <Header user={user} profile={profile} />
-      <main className="flex-1 container py-8">{children}</main>
+      <main className="flex-1 container mx-auto px-4 py-8">{children}</main>
     </div>
   )
 }
