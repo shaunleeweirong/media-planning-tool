@@ -62,6 +62,7 @@ export async function GET(
       objective: ch.objective,
       budget: ch.budget,
       inputs: ch.inputs,
+      audience: ch.audience,
     })),
   }
 
@@ -86,52 +87,26 @@ export async function GET(
   summarySheet.getCell('E2').value = `Total Budget: $${typedPlan.total_budget.toLocaleString()}`
   summarySheet.getCell('A3').value = `Generated: ${new Date().toLocaleDateString()}`
 
-  // Assumptions
   let row = 5
-  summarySheet.getCell(`A${row}`).value = 'ASSUMPTIONS'
-  summarySheet.getCell(`A${row}`).font = { bold: true }
-  row++
 
-  summarySheet.getRow(row).values = ['Channel', 'Objective', 'Budget', 'CPM', 'CPC', 'CPV', 'CTR', 'VTR', 'Frequency', 'Conv Rate', 'Form Rate', 'Eng Rate']
-  summarySheet.getRow(row).font = { bold: true }
-  summarySheet.getRow(row).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } }
-  row++
-
-  results.forEach((ch) => {
-    let channelLabel = CHANNEL_LABELS[ch.channel_type]
-    if (ch.platform) channelLabel += ` - ${PLATFORM_LABELS[ch.platform]}`
-
-    summarySheet.getRow(row).values = [
-      channelLabel,
-      ch.objective ? OBJECTIVE_LABELS[ch.objective] : '-',
-      ch.budget,
-      ch.inputs.cpm || '-',
-      ch.inputs.cpc || '-',
-      ch.inputs.cpv || '-',
-      ch.inputs.ctr ? `${ch.inputs.ctr}%` : '-',
-      ch.inputs.vtr ? `${ch.inputs.vtr}%` : '-',
-      ch.inputs.frequency || '-',
-      ch.inputs.conversion_rate ? `${ch.inputs.conversion_rate}%` : '-',
-      ch.inputs.form_completion_rate ? `${ch.inputs.form_completion_rate}%` : '-',
-      ch.inputs.engagement_rate ? `${ch.inputs.engagement_rate}%` : '-',
-    ]
-    row++
-  })
-
-  // Results for each scenario
+  // Scenarios (each table includes assumption columns inline)
   const scenarios = [
     { key: 'moderate', label: 'MODERATE SCENARIO (Baseline)' },
     { key: 'aggressive', label: 'AGGRESSIVE SCENARIO (+20%)' },
     { key: 'conservative', label: 'CONSERVATIVE SCENARIO (-10%)' },
   ] as const
 
-  scenarios.forEach((scenario) => {
-    row += 2
+  scenarios.forEach((scenario, idx) => {
+    row += idx === 0 ? 0 : 2
     summarySheet.getCell(`A${row}`).value = scenario.label
     summarySheet.getCell(`A${row}`).font = { bold: true }
     row++
 
-    summarySheet.getRow(row).values = ['Channel', 'Objective', 'Budget', 'Impressions', 'Clicks', 'Reach', 'Views', 'Result', 'Cost/Result']
+    summarySheet.getRow(row).values = [
+      'Channel', 'Objective', 'Audience', 'Budget',
+      'Impressions', 'Clicks', 'Reach', 'Views', 'Result', 'Cost/Result',
+      'CPM', 'CPC', 'CPV', 'CTR%', 'VTR%', 'Freq', 'Conv%', 'Form%', 'Eng%',
+    ]
     summarySheet.getRow(row).font = { bold: true }
     summarySheet.getRow(row).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } }
     row++
@@ -201,6 +176,7 @@ export async function GET(
       summarySheet.getRow(row).values = [
         channelLabel,
         ch.objective ? OBJECTIVE_LABELS[ch.objective] : '-',
+        ch.audience || '-',
         ch.budget,
         m.impressions || '-',
         m.clicks || '-',
@@ -208,6 +184,15 @@ export async function GET(
         m.views || '-',
         result,
         costPerResult,
+        ch.inputs.cpm || '-',
+        ch.inputs.cpc || '-',
+        ch.inputs.cpv || '-',
+        ch.inputs.ctr ? `${ch.inputs.ctr}%` : '-',
+        ch.inputs.vtr ? `${ch.inputs.vtr}%` : '-',
+        ch.inputs.frequency || '-',
+        ch.inputs.conversion_rate ? `${ch.inputs.conversion_rate}%` : '-',
+        ch.inputs.form_completion_rate ? `${ch.inputs.form_completion_rate}%` : '-',
+        ch.inputs.engagement_rate ? `${ch.inputs.engagement_rate}%` : '-',
       ]
       row++
     })
